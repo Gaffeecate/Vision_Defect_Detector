@@ -1,0 +1,15 @@
+*.bin
+*.elf
+*.hex
+*.eep
+*.map
+
+*.fuses
+*.lock
+
+*.o
+*.d
+*.a
+
+.vscode/
+.ino.*
