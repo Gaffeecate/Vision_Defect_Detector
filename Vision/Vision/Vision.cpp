@@ -2,8 +2,10 @@
 #include <string>
 #include <opencv2/opencv.hpp>
 #include "MvCameraControl.h"
+#include "Includes/ArduinoCommunicator.h"
 #include <windows.h>
 #include <chrono>
+
 
 using namespace std;
 using namespace cv;
@@ -143,6 +145,11 @@ int SetFramerate(CameraHandle handle, float framerate)
     return MV_CC_SetFloatValue(handle, "AcquisitionFrameRate", framerate);
 }
 
+int SetGain(CameraHandle handle, float gain)
+{
+    return MV_CC_SetFloatValue(handle, "Gain", gain);
+}
+
 int StartGrabbing(CameraHandle handle)
 {
     return MV_CC_StartGrabbing(handle);
@@ -193,11 +200,63 @@ Mat ProcessFrameWithROI(const Mat& frame, int roiWidth, int roiHeight)
     int centerY = frame.rows / 2;
     Rect roi(centerX - roiWidth / 2, centerY - roiHeight / 2, roiWidth, roiHeight);
 
-    Mat zoomedFrame;
-    resize(frame(roi), zoomedFrame, Size(frame.cols, frame.rows));
-    return zoomedFrame;
+    return frame(roi).clone();  // ROI만 적용하고 크기 조정은 하지 않음
 }
 
+
+Mat detectAndMarkDefect(const Mat& frame, int& outDefectCount) {
+    Mat result = frame.clone();
+    cvtColor(result, result, COLOR_GRAY2BGR);
+
+    // 대비 향상
+    Mat enhancedFrame;
+    equalizeHist(frame, enhancedFrame);
+
+    // 적응형 이진화
+    Mat binaryMask;
+    adaptiveThreshold(enhancedFrame, binaryMask, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY_INV, 31, 5);
+
+    // 노이즈 제거
+    Mat kernel = getStructuringElement(MORPH_RECT, Size(3, 3));
+    morphologyEx(binaryMask, binaryMask, MORPH_OPEN, kernel);
+    morphologyEx(binaryMask, binaryMask, MORPH_CLOSE, kernel);
+
+    // 윤곽선 찾기
+    vector<vector<Point>> contours;
+    findContours(binaryMask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+
+    outDefectCount = 0;
+    double minDefectArea = 50;  // 최소 결함 면적 (필요에 따라 조정)
+
+    for (const auto& contour : contours) {
+        double area = contourArea(contour);
+        if (area > minDefectArea) {
+            Rect boundingRect = cv::boundingRect(contour);
+            rectangle(result, boundingRect, Scalar(0, 0, 255), 2);  // 빨간색 사각형
+            outDefectCount++;
+        }
+    }
+
+    // 결함 개수 표시 (크기와 위치 조정, 외곽선 추가)
+    string text = outDefectCount > 0 ? "Defect Detected: " + to_string(outDefectCount) : "No Defects";
+    int fontFace = FONT_HERSHEY_SIMPLEX;
+    double fontScale = 1.5;
+    int thickness = 2;
+    int baseline = 0;
+    Size textSize = getTextSize(text, fontFace, fontScale, thickness, &baseline);
+    Point textOrg((result.cols - textSize.width) / 2, textSize.height + 10);
+
+    // 텍스트 외곽선 그리기 (검정색)
+    putText(result, text, textOrg, fontFace, fontScale, Scalar(0, 0, 0), thickness * 3);
+    // 텍스트 내부 그리기 (흰색)
+    putText(result, text, textOrg, fontFace, fontScale, Scalar(255, 255, 255), thickness);
+
+    // 디버깅을 위한 중간 결과 표시
+    imshow("Enhanced Frame", enhancedFrame);
+    imshow("Binary Mask", binaryMask);
+
+    return result;
+}
 
 
 int main()
@@ -219,10 +278,14 @@ int main()
         return -1;
     }
 
+    // ArduinoCommunicator 객체 생성
+    ArduinoCommunicator arduino(L"\\\\.\\COM3");
+
     // 카메라 설정
     if (SetExposureAuto(handle, false) != MV_OK ||
         SetExposure(handle, 30000.0f) != MV_OK ||
-        SetFramerate(handle, 5.0f) != MV_OK ||
+        SetFramerate(handle, 5.9f) != MV_OK ||
+        SetGain(handle, 0.0f) != MV_OK ||
         MV_CC_SetEnumValue(handle, "PixelFormat", PixelType_Gvsp_Mono8) != MV_OK)
     {
         printf("Failed to set camera parameters\n");
@@ -249,58 +312,19 @@ int main()
         return -1;
     }
 
-    // 시리얼 통신 설정
-    HANDLE hSerial;
-    DCB dcbSerialParams = { 0 };
-    COMMTIMEOUTS timeouts = { 0 };
-
-    LPCWSTR portName = L"\\\\.\\COM3";  // Arduino가 연결된 COM 포트로 설정. 내껀 COM3
-    hSerial = CreateFileW(portName, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hSerial == INVALID_HANDLE_VALUE) {
-        printf("Error opening serial port\n");
-        CloseCamera(handle);
-        delete[] g_pImageData;
-        return -1;
+    // 서보 모터 시작 명령 전송
+    try {
+        arduino.sendCommand("START\n");
     }
-
-    dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
-    if (!GetCommState(hSerial, &dcbSerialParams)) {
-        printf("Error getting serial port state\n");
-        CloseHandle(hSerial);
-        CloseCamera(handle);
-        delete[] g_pImageData;
-        return -1;
-    }
-
-    dcbSerialParams.BaudRate = CBR_9600;
-    dcbSerialParams.ByteSize = 8;
-    dcbSerialParams.StopBits = ONESTOPBIT;
-    dcbSerialParams.Parity = NOPARITY;
-
-    if (!SetCommState(hSerial, &dcbSerialParams)) {
-        printf("Error setting serial port state\n");
-        CloseHandle(hSerial);
-        CloseCamera(handle);
-        delete[] g_pImageData;
-        return -1;
-    }
-
-    timeouts.ReadIntervalTimeout = 50;
-    timeouts.ReadTotalTimeoutConstant = 50;
-    timeouts.ReadTotalTimeoutMultiplier = 10;
-    timeouts.WriteTotalTimeoutConstant = 50;
-    timeouts.WriteTotalTimeoutMultiplier = 10;
-
-    if (!SetCommTimeouts(hSerial, &timeouts)) {
-        printf("Error setting timeouts\n");
-        CloseHandle(hSerial);
+    catch (const std::exception& e) {
+        printf("Failed to send start command: %s\n", e.what());
         CloseCamera(handle);
         delete[] g_pImageData;
         return -1;
     }
 
     // 메인 루프
-    int currentAngle = 0;
+    int frameCount = 0;
     auto lastTime = std::chrono::steady_clock::now();
 
     namedWindow("Camera Feed", WINDOW_NORMAL);
@@ -313,35 +337,43 @@ int main()
             Mat frame = GetFrame(handle);
             if (!frame.empty())
             {
-                imshow("Camera Feed", frame);
 
-                // ROI 처리 및 확대
-                Mat processedFrame = ProcessFrameWithROI(frame, 400, 400); // 예: 200x200 크기
+                // ROI 처리 및 확대 (순서 변경)
+                Mat zoomedFrame = ProcessFrameWithROI(frame, frame.cols / 4, frame.rows / 4);  // ROI 크기를 조정
+
+
+                // 결함 감지 및 표시 (수정된 함수 사용)
+                int defectCount;
+                Mat processedFrame = detectAndMarkDefect(zoomedFrame, defectCount);
+
+
                 imshow("Camera Feed", processedFrame);
 
-                // 1초마다 각도 업데이트 및 전송
-                auto currentTime = std::chrono::steady_clock::now();
-                if (std::chrono::duration_cast<std::chrono::seconds>(currentTime - lastTime).count() >= 1)
+
+                // 매 15프레임마다 서보 모터 이동 명령 전송
+                frameCount++;
+                if (frameCount % 15 == 0)
                 {
-                    currentAngle += 10;
-                    if (currentAngle > 180) currentAngle = 0;
-
-                    char angleStr[10];
-                    sprintf_s(angleStr, "%d\n", currentAngle);
-                    DWORD bytesWritten;
-                    WriteFile(hSerial, angleStr, strlen(angleStr), &bytesWritten, NULL);
-
-                    lastTime = currentTime;
-                    printf("Sent angle: %d\n", currentAngle);
+                    try {
+                        arduino.sendCommand("MOVE\n");
+                        printf("Sent move command to servo\n");
+                    }
+                    catch (const std::exception& e) {
+                        printf("Failed to send move command: %s\n", e.what());
+                    }
                 }
             }
+            else
+            {
+                cout << "Empty frame received!" << endl;
+            }
         }
-        catch (const Exception& e)
+        catch (const cv::Exception& e)
         {
             printf("OpenCV Exception: %s\n", e.what());
             break;
         }
-        catch (const exception& e)
+        catch (const std::exception& e)
         {
             printf("Standard Exception: %s\n", e.what());
             break;
@@ -357,11 +389,9 @@ int main()
             break;
     }
 
-    // 정리
     StopGrabbing(handle);
     CloseCamera(handle);
     delete[] g_pImageData;
-    CloseHandle(hSerial);
 
     return 0;
 }
