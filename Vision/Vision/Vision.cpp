@@ -226,7 +226,7 @@ Mat detectAndMarkDefect(const Mat& frame, int& outDefectCount) {
     findContours(binaryMask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
     outDefectCount = 0;
-    double minDefectArea = 50;  // 최소 결함 면적 (필요에 따라 조정)
+    double minDefectArea = 800;  // 최소 결함 면적 (필요에 따라 조정)
 
     for (const auto& contour : contours) {
         double area = contourArea(contour);
@@ -339,7 +339,7 @@ int main()
             {
 
                 // ROI 처리 및 확대 (순서 변경)
-                Mat zoomedFrame = ProcessFrameWithROI(frame, frame.cols / 4, frame.rows / 4);  // ROI 크기를 조정
+                Mat zoomedFrame = ProcessFrameWithROI(frame, frame.cols / 5, frame.rows / 5);  // ROI 크기를 조정
 
 
                 // 결함 감지 및 표시 (수정된 함수 사용)
