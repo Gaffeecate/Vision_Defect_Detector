@@ -13,7 +13,12 @@ Language: C++
    Sub-Software: HIKROBOT MVS 64Bit V4.3.2 build20240520 (SDK: V4.4.0.4)
 
 
-## 프로젝트 배경/과정정
+## 프로젝트 다이어그램
+
+![image](https://github.com/user-attachments/assets/7bc1e6c6-782b-43e1-9257-a8f2dd8aabcb)
+
+
+## 프로젝트 배경/과정
 
 처음 기획의도는 지금 가지고 있는 웹캠으로 구현하는 것 이었습니다.
 산업용 머신비전의 카메라의 경우 가격도 비싸고, 후술하겠지만 연결방식도 일반적인 USB 단자를 가진 웹캠에 비해서 복잡한 방식으로 구현해야 합니다.
@@ -26,11 +31,6 @@ Language: C++
 렌즈부착 -> Visual Studio 코드로 연결확인까지 대략 5일이 소요되었습니다. 
 
 이후 아두이노 보드와 통신하는 부분과 Defect 감지 부분을 구현했습니다. 해당부분에서 7~8일 정도 소요되었습니다.
-
-
-## 프로젝트 다이어그램
-
-![image](https://github.com/user-attachments/assets/37672e9f-bbb9-4159-aed0-487a1c561432)
 
 
 ## H/W 선정
@@ -94,21 +94,35 @@ Arduino: 서보모터와 보드간 연결을 해야합니다. 회로연결은 �
 ![image](https://github.com/user-attachments/assets/24a95486-2d88-44eb-8b58-2dd4f07c57b7)
 
 클릭하시고 카메라가 나오는지 확인해주세요. 나오지 않는 경우 하드웨어 연결을 확인해주셔야 합니다. 
+잘 나오는지 확인한 이후 Visual Studio 상에서 각자 카메라 하드웨어에 맞게 설정을 해주셔야합니다.
+
+`CameraHandle handle = CreateCamera("MV-CS200-10GM", "");`
+해당 부분에서 본인의 카메라 모델로 변경하고
+
+```C++
+    // 카메라 설정
+    if (SetExposureAuto(handle, false) != MV_OK ||
+        SetExposure(handle, 30000.0f) != MV_OK ||
+        SetFramerate(handle, 5.9f) != MV_OK ||
+        SetGain(handle, 0.0f) != MV_OK ||
+        MV_CC_SetEnumValue(handle, "PixelFormat", PixelType_Gvsp_Mono8) != MV_OK)
+```
+
+해당 영역에서 카메라 스펙에 맞는 값들을 넣어주세요. 노출값, 프레임을 설정해야합니다. 기본값은 카메라의 상세스펙에 나와있습니다.
+
+다음 비주얼 스튜디오 프로젝트 속성에서 
+C++ -> 일반 -> 추가 포함 디렉터리: `$(OPENCV_DIR)\include;C:\Program Files (x86)\MVS\Development\Includes`
+링커 -> 일반 -> 추가 라이브러리 디렉터리: `C:\Program Files (x86)\MVS\Development\Libraries\win64;$(OPENCV_DIR)\x64\vc15\lib`
+링커 -> 입력 -> 추가 종속성: `opencv_world460.lib;mvCameraControl.lib;%(AdditionalDependencies)`
+
+이렇게 입력해줍니다. 당연히 본인의 openCV 버전이나 Debug/Release 구성에 따라 달라져야합니다.
+
+위 과정을 마치면 이제 Vision Setting은 완료가 되었습니다.
 
 ### Arduino
 
 VS Code를 사용하였으므로 아두이노 IDE 만을 사용한 과정보다 더 복잡합니다. VS Code를 사용한 의도는 실무와 조금이라도 더 비슷한 환경을 구성하려는 목적이었습니다만
 너무 복잡하고 크게 필요하지 않았던 과정이므로 코드를 클론을 하시고 그냥 아두이노 IDE를 바로 사용하는 것을 권장합니다.
-
-```Tree
-C:.
-│   .gitignore
-│   Servo.ino
-│
-└───.vscode
-        arduino.json
-        c_cpp_properties.json
-```
 
 #### VS code 설정법
 
@@ -145,7 +159,7 @@ C:.
 ```
 5. 위 템플릿에서 includePath와 Compiler Path를 각자 맞는 경로로 바꿔주시고
 6. arduino.json에는
-```
+``` JSON
 {
     "board": "arduino:avr:uno",
     "port": "COM3",
@@ -158,14 +172,117 @@ C:.
 9. 이제 Servo.ino 파일을 누르고 우측 상단의 Arduino Verfy -> Arduino Upload를 눌러줍니다.
 10. vscode 터미널에 arduino done 이라는 메세지가 나오게 되면 코드가 아두이노 보드에 정상적으로 업로드 된것입니다. 
 
+```Tree
+C:.
+│   .gitignore
+│   Servo.ino
+│
+└───.vscode
+        arduino.json
+        c_cpp_properties.json
+```
 
-
-
-
-
+VS Code 상에서 위와같은 트리구조를 갖게 됩니다. 
 
 
 ## 핵심로직
+
+### 카메라 연결
+
+```C++
+CameraHandle CreateCamera(const string& cameraname, const string& ip_address)
+{
+    MV_CC_DEVICE_INFO_LIST stDeviceList;
+    memset(&stDeviceList, 0, sizeof(MV_CC_DEVICE_INFO_LIST));
+
+    // GigE 카메라 열거
+    if (MV_CC_EnumDevices(MV_GIGE_DEVICE, &stDeviceList) != MV_OK)
+        return nullptr;
+
+    CameraHandle handle = nullptr;
+    for (unsigned int i = 0; i < stDeviceList.nDeviceNum; i++)
+    {
+        MV_CC_DEVICE_INFO* pDeviceInfo = stDeviceList.pDeviceInfo[i];
+        if (pDeviceInfo->nTLayerType == MV_GIGE_DEVICE)
+        {
+            string modelName((char*)pDeviceInfo->SpecialInfo.stGigEInfo.chModelName);
+            if (modelName == cameraname)
+            {
+                // 카메라 핸들 생성
+                if (MV_CC_CreateHandle(&handle, pDeviceInfo) != MV_OK)
+                    return nullptr;
+
+                // IP 주소 설정
+                if (!ip_address.empty())
+                {
+                    unsigned int nIP;
+                    if (ParseIPAddress(ip_address, nIP))
+                    {
+                        if (MV_GIGE_ForceIpEx(handle, nIP, 0xFFFFFF00, 0x0101A8C0) != MV_OK)
+                        {
+                            MV_CC_DestroyHandle(handle);
+                            return nullptr;
+                        }
+                    }
+                }
+
+                // 카메라 장치 열기
+                if (MV_CC_OpenDevice(handle, MV_ACCESS_Exclusive, 0) != MV_OK)
+                {
+                    MV_CC_DestroyHandle(handle);
+                    return nullptr;
+                }
+
+                return handle;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+```
+웹캠의 경우, `VideoCapture cap(0);` 만으로도, 간단하게 카메라를 열 수 있지만 산업용 카메라의 경우 복잡한 과정을 거치면서 연결됩니다.
+카메라의 주소값, 연결된 카메라들의 장치정보들을 불러와야 합니다. 
+
+우선 **MV_CC_EnumDevices** 함수에서 연결 가능한 카메라 정보를 가져오고, 찾는 카메라의 프로토콜을 지정합니다. 이후 발견된 정보들을 구조체에 담습니다.
+이후 **MV_CC_CreateHandle** 함수를 통해 카메라 핸들을 생성합니다. 카메라 핸들은 구조체에서 가져온 카메라정보를 기반으로 카메라와 연결을 수행합니다. 이미지 획득을 위해서 필수적입니다. 
+최종적으로 핸들 즉 채널이 생성되면 카메라를 연결합니다.
+
+### 이미지 처리
+
+```C++
+Mat detectAndMarkDefect(const Mat& frame, int& outDefectCount) {
+    Mat result = frame.clone();
+    cvtColor(result, result, COLOR_GRAY2BGR);
+
+    // 대비 향상
+    Mat enhancedFrame;
+    equalizeHist(frame, enhancedFrame);
+
+    // 적응형 이진화
+    Mat binaryMask;
+    adaptiveThreshold(enhancedFrame, binaryMask, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY_INV, 31, 5);
+
+    // 노이즈 제거
+    Mat kernel = getStructuringElement(MORPH_RECT, Size(3, 3));
+    morphologyEx(binaryMask, binaryMask, MORPH_OPEN, kernel);
+    morphologyEx(binaryMask, binaryMask, MORPH_CLOSE, kernel);
+
+    // 윤곽선 찾기
+    vector<vector<Point>> contours;
+    findContours(binaryMask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+
+    outDefectCount = 0;
+    double minDefectArea = 800;  // 최소 결함 면적
+}
+  
+```
+1. 대비향상으로 결함에 있는 밝기차이를 증가시킵니다
+2. 이진화(Binaryzation)을 통해서 이미지를 흑과 백 두가지로 나눕니다. 이미지처리를 단순화하여 속도를 내기 위함입니다.
+3. 노이즈 제거를 통해 이진화 과정에서 생기는 노이즈들을 제거합니다. 
+4. 최종적으로 윤곽선을 추출하여 결함의 경계를 식별합니다.
+
 
 ## 실제 구동장면
 
