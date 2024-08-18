@@ -8,25 +8,30 @@
 이를 위해 OpenCV 라이브러리에서 제공하는 이미지 처리함수, Camera API를 활용했습니다.
 
 Language: C++
-IDE/Editor: Visual Studio 2022, VS Code(Arduino)
-Library: OpenCV 4.6.0
-Sub-Software: HIKROBOT MVS 64Bit V4.3.2 build20240520 (SDK: V4.4.0.4)
+   IDE/Editor: Visual Studio 2022, VS Code(Arduino)
+   Library: OpenCV 4.6.0
+   Sub-Software: HIKROBOT MVS 64Bit V4.3.2 build20240520 (SDK: V4.4.0.4)
 
 
-## 프로젝트 배경
+## 프로젝트 배경/과정정
 
 처음 기획의도는 지금 가지고 있는 웹캠으로 구현하는 것 이었습니다.
 산업용 머신비전의 카메라의 경우 가격도 비싸고, 후술하겠지만 연결방식도 일반적인 USB 단자를 가진 웹캠에 비해서 복잡한 방식으로 구현해야 합니다.
 하지만 설비 S/W를 다루게 된다면 익숙해져야 할 부분이고, 비전과 컴퓨터를 연결만 할 수 있다면 그 이후 구현에선 많은 자료가 있으므로 해볼만한 프로젝트라고 생각하였습니다.
 
-개발기간은 대략 40일 정도 소요되었습니다. 가장 큰 부분은 준비물 선정과, 특히 산업용 렌즈의 경우 해외배송 건이라 2주가 넘는 시간이 소요되었습니다. 그 2주의 기간 동안 웹캠을 활용하여
-개발을 하였고(Machine_Vision_Pre 레포지토리 참조) OpenCV, Visual Studio 개발환경에 익숙해지려고 노력했습니다. 또한 일찍 배송이 된 아두이노 세트를 가지고 모션 쪽 구현을 미리 진행하였습니다.
+개발기간은 대략 40일 정도 소요되었습니다. 가장 큰 부분은 준비물 선정기간이었고 특히 산업용 렌즈의 경우 해외배송 건이라 2주가 넘는 시간이 소요되었습니다. 그 2주의 기간 동안 웹캠을 활용하여
+개발을 하였고(Machine_Vision_Pre 레포지토리 참조) OpenCV, Visual Studio 개발환경에 익숙해지려고 노력했습니다. 또한 일찍 배송 된 아두이노 세트를 가지고 모션 쪽 구현을 미리 진행하였습니다.
 
 렌즈가 도착하고, 렌즈를 가지고 있던 머신비전 카메라에 부착하고 본격적인 개발을 시작하였습니다. Camera 제조사에서 제공한 SDK를 설치한 후에 작동을 확인하고 API를 통해 연결을 구현하였습니다.
 렌즈부착 -> Visual Studio 코드로 연결확인까지 대략 5일이 소요되었습니다. 
 
-이후 아두이노 보드와 통신하는 부분과 Defect 감지 부분을 구현했습니다.
-   
+이후 아두이노 보드와 통신하는 부분과 Defect 감지 부분을 구현했습니다. 해당부분에서 7~8일 정도 소요되었습니다.
+
+
+## 프로젝트 다이어그램
+
+![image](https://github.com/user-attachments/assets/37672e9f-bbb9-4159-aed0-487a1c561432)
+
 
 ## H/W 선정
 
@@ -40,15 +45,15 @@ Sub-Software: HIKROBOT MVS 64Bit V4.3.2 build20240520 (SDK: V4.4.0.4)
 | 6 | 기타      | 조명(보유 중인 LED 조명), 클램프        | - | - |
 | - | Total      | -       | 206,380원 | - |
 
-비전과 카메라 파트의 재료선정은 가격을 최우선으로 생각하였습니다. 그리고 카메라의 경우 프레임 그레버 타입과 GigE 타입이 있었는데
-가지고 있는 PC가 노트북이고, 가격역시 프레임 그레버 카드가 고가에, 호환성 여부를 확신할 수 없었으므로 길게 고민하지 않고 랜선으로 연결되는 GigE 타입의 
+비전과 카메라 파트의 재료선정은 가격을 최우선으로 생각하였습니다. 그리고 카메라의 경우 프레임 그레버 타입과 GigE 타입 중에서
+가지고 있는 PC가 노트북이고 가격역시 프레임 그레버 카드가 고가에, 호환성 여부를 확신할 수 없었으므로, 길게 고민하지 않고 랜선으로 연결되는 GigE 타입의 
 HIKROBOT-MV-CS200-10GM을 선정하였습니다. 구매처는 [리사이클메카](http://www.rpom.co.kr/)입니다.
 
 렌즈의 경우 위 카메라와 호환되는 C-마운트 렌즈 중에서 대략 30~50cm 정도의 초점거리에서 촬영가능한 렌즈로 선정하였습니다. 
 산업용 렌즈에서 주로 쓰이는 초점거리 12mm와 16mm 카메라 렌즈를 고려하였고, 계획된 피사체의 결함크기가 크지 않은것을 고려하여 16mm 렌즈를 선정하였습니다. 
 해당 모델의 선정은 가격을 우선시하여 선정하였고, 지마켓에서 중고물품으로 구매하였습니다. 
 
-렌즈의 경우 한가지 주의해야할 점은 구매 전 반드시 Format size를 확인해야합니다. Format 사이즈란 해당 렌즈에 최적화된 'Camera Sensor size'를 가리킵니다.
+한가지 주의해야할 점은 구매 전 반드시 Format size를 확인해야합니다. Format 사이즈란 렌즈에 최적화된 'Camera Sensor size'를 가리킵니다.
 해당모델의 포멧사이즈는 2/3 인치이고, 카메라 센서사이즈는 1인치입니다. 그 말은 렌즈의 [이미지서클](https://blog.naver.com/PostView.naver?blogId=sng82&logNo=50124841250)이 카메라 대각선 직경보다 작다는것을 의미하고 Full size 이미지에서
 비네팅(가장자리가 어두워짐) 현상이 발생할 수 있습니다. 저의 경우에도 풀 사이즈 이미지에선 비네팅 현상이 있었습니다.
 
@@ -90,14 +95,77 @@ Arduino: 서보모터와 보드간 연결을 해야합니다. 회로연결은 �
 
 클릭하시고 카메라가 나오는지 확인해주세요. 나오지 않는 경우 하드웨어 연결을 확인해주셔야 합니다. 
 
-
 ### Arduino
 
-## 프로젝트 구조
+VS Code를 사용하였으므로 아두이노 IDE 만을 사용한 과정보다 더 복잡합니다. VS Code를 사용한 의도는 실무와 조금이라도 더 비슷한 환경을 구성하려는 목적이었습니다만
+너무 복잡하고 크게 필요하지 않았던 과정이므로 코드를 클론을 하시고 그냥 아두이노 IDE를 바로 사용하는 것을 권장합니다.
+
+```Tree
+C:.
+│   .gitignore
+│   Servo.ino
+│
+└───.vscode
+        arduino.json
+        c_cpp_properties.json
+```
+
+#### VS code 설정법
+
+1. Arduino IDE를 설치합니다.
+2. 해당 코드를 VS Code 사용하여 실행합니다.
+3. 아두이노 확장을 설치해주세요
+4. ```Ctrl+Shift+P```를 누르고 ```Preferences: Open Settings (JSON)``` 을 클릭합니다.
+5. 아래 템플릿을 ```c_cpp_properties.json```에 붙여넣습니다.
+ ``` JSON
+{
+    "configurations": [
+        {
+            "name": "Win32",
+            "includePath": [
+                "${workspaceFolder}/",
+                "C:/Users/Account Name/Documents/Arduino/libraries/",
+                "C:/Users/Account Name/AppData/Local/Arduino15/hardware/avr/1.8.6/cores/arduino/",
+                "C:/Users/Account Name/AppData/Local/Arduino15/hardware/avr/1.8.6/variants/"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE",
+                "USBCON"
+            ],
+            "cStandard": "c11",
+            "cppStandard": "c++11",
+            "intelliSenseMode": "gcc-x64",
+            "compilerPath": "C:/Users/Account Name/AppData/Local/Arduino15/avr-gcc/7.3.0-atmel3.6.1-arduino7/bin/avr-gcc.exe"
+        }
+    ],
+    "version": 4
+}
+```
+5. 위 템플릿에서 includePath와 Compiler Path를 각자 맞는 경로로 바꿔주시고
+6. arduino.json에는
+```
+{
+    "board": "arduino:avr:uno",
+    "port": "COM3",
+    "sketch": "Servo.ino"
+}
+```
+해당 json을 붙여넣습니다. 해당 내용도 본인에게 맞는 보드와 파일명으로 바꿔주시면 됩니다.
+7. ```Ctrl+Shift+P```를 누르고 ```Arduino: Select Board``` 을 클릭합니다. 목록이 나타나면 본인의 아두이노 보드를 선택해줍니다.
+8. 다시 ```Ctrl+Shift+P```를 누르고 ```Arduino: Select Serial Port``` 을 클릭합니다. 본인의 포트가 나오면 선택해줍니다. 이건 보드가 PC에 꽂혀있는 상태여야 합니다.
+9. 이제 Servo.ino 파일을 누르고 우측 상단의 Arduino Verfy -> Arduino Upload를 눌러줍니다.
+10. vscode 터미널에 arduino done 이라는 메세지가 나오게 되면 코드가 아두이노 보드에 정상적으로 업로드 된것입니다. 
 
 
 
-## 코드
+
+
+
+
+
+## 핵심로직
 
 ## 실제 구동장면
 
