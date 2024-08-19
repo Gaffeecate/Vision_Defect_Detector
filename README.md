@@ -296,7 +296,7 @@ Mat detectAndMarkDefect(const Mat& frame, int& outDefectCount) {
 
 ## 실제 구동장면
 
-
+![convert](https://github.com/user-attachments/assets/b978d7fa-3d9b-43ee-a5a7-589492136e87)
 
 ## 참고자료
 
