@@ -13,7 +13,7 @@ Library: OpenCV 4.6.0
 Sub-Software: HIKROBOT MVS 64Bit V4.3.2 build20240520 (SDK: V4.4.0.4)    
 
 
-## 프로젝트 다이어그램
+## 프로젝트 플로우
 
 ![image](https://github.com/user-attachments/assets/7bc1e6c6-782b-43e1-9257-a8f2dd8aabcb)
 
@@ -47,7 +47,7 @@ Sub-Software: HIKROBOT MVS 64Bit V4.3.2 build20240520 (SDK: V4.4.0.4)
 
 비전과 카메라 파트의 재료선정은 가격을 최우선으로 생각하였습니다. 그리고 카메라의 경우 프레임 그레버 타입과 GigE 타입 중에서
 가지고 있는 PC가 노트북이고 가격역시 프레임 그레버 카드가 고가에, 호환성 여부를 확신할 수 없었으므로, 길게 고민하지 않고 랜선으로 연결되는 GigE 타입의 
-HIKROBOT-MV-CS200-10GM을 선정하였습니다. 구매처는 [리사이클메카](http://www.rpom.co.kr/)입니다.
+HIKROBOT-MV-CS200-10GM을 선정하였습니다. 구매처는 [리사이클 메카](http://www.rpom.co.kr/)입니다.
 
 렌즈의 경우 위 카메라와 호환되는 C-마운트 렌즈 중에서 대략 30~50cm 정도의 거리에서 촬영가능한 렌즈로 선정하였습니다. 
 산업용 렌즈에서 주로 쓰이는 초점거리 12mm와 16mm 카메라 렌즈를 고려하였고, 계획된 피사체의 결함크기가 크지 않은것을 고려하여 16mm 렌즈를 선정하였습니다. 
@@ -55,7 +55,7 @@ HIKROBOT-MV-CS200-10GM을 선정하였습니다. 구매처는 [리사이클메�
 
 한가지 주의해야할 점은 구매 전 반드시 Format size를 확인해야합니다. Format 사이즈란 렌즈에 최적화된 'Camera sensor size'를 가리킵니다.
 해당모델의 포멧사이즈는 2/3인치이고, 카메라 센서사이즈는 1인치입니다. 그 말은 렌즈의 [이미지 서클](https://blog.naver.com/PostView.naver?blogId=sng82&logNo=50124841250)이 카메라 대각선 직경보다 작다는것을 의미하고 Full size 이미지에서
-비네팅(가장자리가 어두워짐) 현상이 발생할 수 있습니다. 저의 경우에도 풀 사이즈 이미지에선 [비네팅](https://ko.wikipedia.org/wiki/%EB%B9%84%EB%84%A4%ED%8C%85) 현상이 있었습니다.
+[비네팅/Vignetting(가장자리가 어두워짐)](https://ko.wikipedia.org/wiki/%EB%B9%84%EB%84%A4%ED%8C%85) 현상이 발생할 수 있습니다. 저의 경우에도 풀 사이즈 이미지에선 비네팅 현상이 있었습니다.
 
 나머지 다른 물품들은 인터넷 및 오프라인 매장에서 쉽게 구매하였습니다. LAN Cable은 단거리 연결에서 CAT 버전은 크게 의미가 없으므로 시중에서 가장 저렴한 제품을 고르시면 됩니다.
 
@@ -96,6 +96,8 @@ Arduino: 서보모터와 보드간 연결을 해야합니다. 회로연결은 �
 클릭하시고 카메라가 나오는지 확인해주세요. 나오지 않는 경우 하드웨어 연결을 확인해주셔야 합니다. 
 잘 나오는지 확인한 이후 Visual Studio 상에서 각자 카메라 하드웨어에 맞게 설정을 해주셔야합니다.
 
+**참고로 HIKROBOT Vision Camera를 사용한다면 MVS를 설치했을때 `C:\Program Files (x86)\MVS\Development\Documentations`에 API 문서가 함께 제공됩니다. 개발할때 활용도가 높으니 참조하시면 됩니다.**
+
 `CameraHandle handle = CreateCamera("MV-CS200-10GM", "");`
 해당 부분에서 본인의 카메라 모델로 변경하고
 
@@ -118,6 +120,8 @@ C++ -> 일반 -> 추가 포함 디렉터리: `$(OPENCV_DIR)\include;C:\Program F
 이렇게 입력해줍니다. 당연히 본인의 openCV 버전이나 Debug/Release 구성에 따라 달라져야합니다.
 
 위 과정을 마치면 이제 Vision Setting은 완료가 되었습니다.
+
+
 
 ### Arduino
 
@@ -249,7 +253,7 @@ CameraHandle CreateCamera(const string& cameraname, const string& ip_address)
 이후 `MV_CC_CreateHandle` 함수를 통해 카메라 핸들을 생성합니다. 카메라 핸들은 구조체에서 가져온 카메라정보를 기반으로 카메라와 연결을 수행합니다. 이미지 획득을 위해서 필수적입니다. 
 최종적으로 핸들 즉 채널이 생성되면 카메라를 연결합니다.   
 
-처음엔 복잡한 것처럼 보여도 아래 설명서의 플로우를 따라가다 보면 어떻게 흐름은 눈에 보이는것 같습니다. 주황색으로 표시된 부분은 옵션 절차입니다.
+처음엔 복잡한 것처럼 보여도 아래 설명서의 플로우를 따라가다 보면 흐름은 눈에 보이는것 같습니다. 주황색으로 표시된 부분은 옵션 절차입니다.
 IP 주소를 정확하게 알고있어 연결하고자 하는 카메라 정보를 가져올수 있는 경우엔 MV_CC_EnumDevices를 삭제 할수도 있습니다.
 
 ![image](https://github.com/user-attachments/assets/8b9d4047-8bdd-4168-b9d7-c05ad25dd8fb)
@@ -292,4 +296,11 @@ Mat detectAndMarkDefect(const Mat& frame, int& outDefectCount) {
 
 ## 실제 구동장면
 
+
+
 ## 참고자료
+
+1. [Github](https://github.com/parkeh-dev/Control_Hikvision_Camera)
+2. [OpenCV4로 배우는 컴퓨터 비전과 머신러닝](https://thebook.io/006939/0488/)
+3. HIKROBOT API Document (Machine Vision Camera SDK Developer Guide Windows (C) V4.4.0)
+4. [Anthropic Claude Sonet3.5](https://claude.ai/new)
