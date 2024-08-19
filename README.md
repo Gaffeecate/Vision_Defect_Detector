@@ -7,10 +7,10 @@
 서보모터가 돌아가면서 결함이 새겨진 피사체를 회전시키고, 비전에 나타난 피사체의 결함을 인식하여 결함의 개수를 카운트 하는 프로그램입니다.
 이를 위해 OpenCV 라이브러리에서 제공하는 이미지 처리함수, Camera API를 활용했습니다.
 
-Language: C++
-   IDE/Editor: Visual Studio 2022, VS Code(Arduino)
-   Library: OpenCV 4.6.0
-   Sub-Software: HIKROBOT MVS 64Bit V4.3.2 build20240520 (SDK: V4.4.0.4)
+Language: C++    
+IDE/Editor: Visual Studio 2022, VS Code(Arduino)    
+Library: OpenCV 4.6.0     
+Sub-Software: HIKROBOT MVS 64Bit V4.3.2 build20240520 (SDK: V4.4.0.4)    
 
 
 ## 프로젝트 다이어그램
@@ -49,13 +49,13 @@ Language: C++
 가지고 있는 PC가 노트북이고 가격역시 프레임 그레버 카드가 고가에, 호환성 여부를 확신할 수 없었으므로, 길게 고민하지 않고 랜선으로 연결되는 GigE 타입의 
 HIKROBOT-MV-CS200-10GM을 선정하였습니다. 구매처는 [리사이클메카](http://www.rpom.co.kr/)입니다.
 
-렌즈의 경우 위 카메라와 호환되는 C-마운트 렌즈 중에서 대략 30~50cm 정도의 초점거리에서 촬영가능한 렌즈로 선정하였습니다. 
+렌즈의 경우 위 카메라와 호환되는 C-마운트 렌즈 중에서 대략 30~50cm 정도의 거리에서 촬영가능한 렌즈로 선정하였습니다. 
 산업용 렌즈에서 주로 쓰이는 초점거리 12mm와 16mm 카메라 렌즈를 고려하였고, 계획된 피사체의 결함크기가 크지 않은것을 고려하여 16mm 렌즈를 선정하였습니다. 
 해당 모델의 선정은 가격을 우선시하여 선정하였고, 지마켓에서 중고물품으로 구매하였습니다. 
 
-한가지 주의해야할 점은 구매 전 반드시 Format size를 확인해야합니다. Format 사이즈란 렌즈에 최적화된 'Camera Sensor size'를 가리킵니다.
-해당모델의 포멧사이즈는 2/3 인치이고, 카메라 센서사이즈는 1인치입니다. 그 말은 렌즈의 [이미지서클](https://blog.naver.com/PostView.naver?blogId=sng82&logNo=50124841250)이 카메라 대각선 직경보다 작다는것을 의미하고 Full size 이미지에서
-비네팅(가장자리가 어두워짐) 현상이 발생할 수 있습니다. 저의 경우에도 풀 사이즈 이미지에선 비네팅 현상이 있었습니다.
+한가지 주의해야할 점은 구매 전 반드시 Format size를 확인해야합니다. Format 사이즈란 렌즈에 최적화된 'Camera sensor size'를 가리킵니다.
+해당모델의 포멧사이즈는 2/3인치이고, 카메라 센서사이즈는 1인치입니다. 그 말은 렌즈의 [이미지 서클](https://blog.naver.com/PostView.naver?blogId=sng82&logNo=50124841250)이 카메라 대각선 직경보다 작다는것을 의미하고 Full size 이미지에서
+비네팅(가장자리가 어두워짐) 현상이 발생할 수 있습니다. 저의 경우에도 풀 사이즈 이미지에선 [비네팅](https://ko.wikipedia.org/wiki/%EB%B9%84%EB%84%A4%ED%8C%85) 현상이 있었습니다.
 
 나머지 다른 물품들은 인터넷 및 오프라인 매장에서 쉽게 구매하였습니다. LAN Cable은 단거리 연결에서 CAT 버전은 크게 의미가 없으므로 시중에서 가장 저렴한 제품을 고르시면 됩니다.
 
@@ -110,10 +110,10 @@ Arduino: 서보모터와 보드간 연결을 해야합니다. 회로연결은 �
 
 해당 영역에서 카메라 스펙에 맞는 값들을 넣어주세요. 노출값, 프레임을 설정해야합니다. 기본값은 카메라의 상세스펙에 나와있습니다.
 
-다음 비주얼 스튜디오 프로젝트 속성에서 
-C++ -> 일반 -> 추가 포함 디렉터리: `$(OPENCV_DIR)\include;C:\Program Files (x86)\MVS\Development\Includes`
-링커 -> 일반 -> 추가 라이브러리 디렉터리: `C:\Program Files (x86)\MVS\Development\Libraries\win64;$(OPENCV_DIR)\x64\vc15\lib`
-링커 -> 입력 -> 추가 종속성: `opencv_world460.lib;mvCameraControl.lib;%(AdditionalDependencies)`
+다음 비주얼 스튜디오 프로젝트 속성에서     
+C++ -> 일반 -> 추가 포함 디렉터리: `$(OPENCV_DIR)\include;C:\Program Files (x86)\MVS\Development\Includes`   
+링커 -> 일반 -> 추가 라이브러리 디렉터리: `C:\Program Files (x86)\MVS\Development\Libraries\win64;$(OPENCV_DIR)\x64\vc15\lib`    
+링커 -> 입력 -> 추가 종속성: `opencv_world460.lib;mvCameraControl.lib;%(AdditionalDependencies)`    
 
 이렇게 입력해줍니다. 당연히 본인의 openCV 버전이나 Debug/Release 구성에 따라 달라져야합니다.
 
@@ -166,11 +166,11 @@ VS Code를 사용하였으므로 아두이노 IDE 만을 사용한 과정보다 
     "sketch": "Servo.ino"
 }
 ```
-해당 json을 붙여넣습니다. 해당 내용도 본인에게 맞는 보드와 파일명으로 바꿔주시면 됩니다.
-7. ```Ctrl+Shift+P```를 누르고 ```Arduino: Select Board``` 을 클릭합니다. 목록이 나타나면 본인의 아두이노 보드를 선택해줍니다.
-8. 다시 ```Ctrl+Shift+P```를 누르고 ```Arduino: Select Serial Port``` 을 클릭합니다. 본인의 포트가 나오면 선택해줍니다. 이건 보드가 PC에 꽂혀있는 상태여야 합니다.
-9. 이제 Servo.ino 파일을 누르고 우측 상단의 Arduino Verfy -> Arduino Upload를 눌러줍니다.
-10. vscode 터미널에 arduino done 이라는 메세지가 나오게 되면 코드가 아두이노 보드에 정상적으로 업로드 된것입니다. 
+해당 json을 붙여넣습니다. 해당 내용도 본인에게 맞는 보드와 파일명으로 바꿔주시면 됩니다.    
+7. ```Ctrl+Shift+P```를 누르고 ```Arduino: Select Board``` 을 클릭합니다. 목록이 나타나면 본인의 아두이노 보드를 선택해줍니다.    
+8. 다시 ```Ctrl+Shift+P```를 누르고 ```Arduino: Select Serial Port``` 을 클릭합니다. 본인의 포트가 나오면 선택해줍니다. 이건 보드가 PC에 꽂혀있는 상태여야 합니다.    
+9. 이제 Servo.ino 파일을 누르고 우측 상단의 Arduino Verfy -> Arduino Upload를 눌러줍니다.     
+10. vscode 터미널에 arduino done 이라는 메세지가 나오게 되면 코드가 아두이노 보드에 정상적으로 업로드 된것입니다.      
 
 ```Tree
 C:.
@@ -192,24 +192,24 @@ VS Code 상에서 위와같은 트리구조를 갖게 됩니다.
 ```C++
 CameraHandle CreateCamera(const string& cameraname, const string& ip_address)
 {
-    MV_CC_DEVICE_INFO_LIST stDeviceList;
-    memset(&stDeviceList, 0, sizeof(MV_CC_DEVICE_INFO_LIST));
+    MV_CC_DEVICE_INFO_LIST stDeviceList; // 연결된 카메라 장치 정보들을 담는 구조체
+    memset(&stDeviceList, 0, sizeof(MV_CC_DEVICE_INFO_LIST)); // memset 함수를 사용하여 stDeviceList 구조체으 모든 바이트를 0으로 초기화
 
     // GigE 카메라 열거
-    if (MV_CC_EnumDevices(MV_GIGE_DEVICE, &stDeviceList) != MV_OK)
+    if (MV_CC_EnumDevices(MV_GIGE_DEVICE, &stDeviceList) != MV_OK) // 연결된 카메라를 전부 불러와라
         return nullptr;
 
     CameraHandle handle = nullptr;
     for (unsigned int i = 0; i < stDeviceList.nDeviceNum; i++)
     {
         MV_CC_DEVICE_INFO* pDeviceInfo = stDeviceList.pDeviceInfo[i];
-        if (pDeviceInfo->nTLayerType == MV_GIGE_DEVICE)
+        if (pDeviceInfo->nTLayerType == MV_GIGE_DEVICE) // MV_CC_DEVICE_INFO에 카메라 정보를 담고 GIGE 프로토콜 장치인지 확인
         {
-            string modelName((char*)pDeviceInfo->SpecialInfo.stGigEInfo.chModelName);
-            if (modelName == cameraname)
+            string modelName((char*)pDeviceInfo->SpecialInfo.stGigEInfo.chModelName); // 열거된 카메라의 모델명이
+            if (modelName == cameraname) // 개발자가 입력한 카메라와 일치하냐
             {
                 // 카메라 핸들 생성
-                if (MV_CC_CreateHandle(&handle, pDeviceInfo) != MV_OK)
+                if (MV_CC_CreateHandle(&handle, pDeviceInfo) != MV_OK) // 그렇다면 핸들 생성
                     return nullptr;
 
                 // IP 주소 설정
@@ -245,9 +245,15 @@ CameraHandle CreateCamera(const string& cameraname, const string& ip_address)
 웹캠의 경우, `VideoCapture cap(0);` 만으로도, 간단하게 카메라를 열 수 있지만 산업용 카메라의 경우 복잡한 과정을 거치면서 연결됩니다.
 카메라의 주소값, 연결된 카메라들의 장치정보들을 불러와야 합니다. 
 
-우선 **MV_CC_EnumDevices** 함수에서 연결 가능한 카메라 정보를 가져오고, 찾는 카메라의 프로토콜을 지정합니다. 이후 발견된 정보들을 구조체에 담습니다.
-이후 **MV_CC_CreateHandle** 함수를 통해 카메라 핸들을 생성합니다. 카메라 핸들은 구조체에서 가져온 카메라정보를 기반으로 카메라와 연결을 수행합니다. 이미지 획득을 위해서 필수적입니다. 
-최종적으로 핸들 즉 채널이 생성되면 카메라를 연결합니다.
+우선 `MV_CC_EnumDevices` 함수에서 연결 가능한 카메라 정보를 가져오고, 찾는 카메라의 프로토콜을 지정합니다. 이후 발견된 정보들을 구조체에 담습니다.
+이후 `MV_CC_CreateHandle` 함수를 통해 카메라 핸들을 생성합니다. 카메라 핸들은 구조체에서 가져온 카메라정보를 기반으로 카메라와 연결을 수행합니다. 이미지 획득을 위해서 필수적입니다. 
+최종적으로 핸들 즉 채널이 생성되면 카메라를 연결합니다.   
+
+처음엔 복잡한 것처럼 보여도 아래 설명서의 플로우를 따라가다 보면 어떻게 흐름은 눈에 보이는것 같습니다. 주황색으로 표시된 부분은 옵션 절차입니다.
+IP 주소를 정확하게 알고있어 연결하고자 하는 카메라 정보를 가져올수 있는 경우엔 MV_CC_EnumDevices를 삭제 할수도 있습니다.
+
+![image](https://github.com/user-attachments/assets/8b9d4047-8bdd-4168-b9d7-c05ad25dd8fb)
+
 
 ### 이미지 처리
 
