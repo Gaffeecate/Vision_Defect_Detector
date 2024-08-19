@@ -303,4 +303,3 @@ Mat detectAndMarkDefect(const Mat& frame, int& outDefectCount) {
 1. [Github](https://github.com/parkeh-dev/Control_Hikvision_Camera)
 2. [OpenCV4로 배우는 컴퓨터 비전과 머신러닝](https://thebook.io/006939/0488/)
 3. HIKROBOT API Document (Machine Vision Camera SDK Developer Guide Windows (C) V4.4.0)
-4. [Anthropic Claude Sonet3.5](https://claude.ai/new)
