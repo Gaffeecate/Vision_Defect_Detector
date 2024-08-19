@@ -75,9 +75,9 @@ Arduino: 서보모터와 보드간 연결을 해야합니다. 회로연결은 �
 
 추가로 아두이노 보드와 PC를 연결할때 중간에 꽂는 포트가 달라져선 안됩니다. 처음 연결할때 포트를 설정하게 되는데, 이 포트에 해당하는 USB 단자에 꽂아야 작동하게 됩니다. 
 
-이렇게 연결하고 나면 하드웨어 구성이 완료됩니다. 완료가 되면 저런 구성을 가집니다다.
+이렇게 연결하고 나면 하드웨어 구성이 완료됩니다. 완료가 되면 저런 구성을 가집니다.
 
-![image](https://github.com/user-attachments/assets/5cf4cac4-b4c0-4527-a865-fa35e1c164c8)
+![image](https://github.com/user-attachments/assets/a5eadeaa-6ee8-4962-a22a-9ba27b6b049e)
 
 
 ## 설치 및 실행방법
