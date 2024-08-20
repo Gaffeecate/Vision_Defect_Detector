@@ -99,7 +99,9 @@ Arduino: 서보모터와 보드간 연결을 해야합니다. 회로연결은 �
 클릭하시고 카메라가 나오는지 확인해주세요. 나오지 않는 경우 하드웨어 연결을 확인해주셔야 합니다. 
 잘 나오는지 확인한 이후 Visual Studio 상에서 각자 카메라 하드웨어에 맞게 설정을 해주셔야합니다.
 
-**참고로 HIKROBOT Vision Camera를 사용한다면 MVS를 설치했을때 `C:\Program Files (x86)\MVS\Development\Documentations`에 API 문서가 함께 제공됩니다. 개발할때 활용도가 높으니 참조하시면 됩니다.**
+**HIKROBOT Vision Camera를 사용한다면 MVS를 설치했을때 `C:\Program Files (x86)\MVS\Development\Documentations`에 API 문서가 함께 제공됩니다. 개발할때 활용도가 높으니 참조하시면 됩니다.**
+**MVS로 카메라 연결 정상여부만 확인하고 '연결해제' 버튼을 반드시 눌러주세요. 추후 Visual Studio에서 실행시 MVS에서 카메라 점유 문제로 연결이 되지 않습니다.**
+
 
 `CameraHandle handle = CreateCamera("MV-CS200-10GM", "");`
 해당 부분에서 본인의 카메라 모델로 변경하고
@@ -292,7 +294,7 @@ Mat detectAndMarkDefect(const Mat& frame, int& outDefectCount) {
   
 ```
 1. 대비향상으로 결함에 있는 밝기차이를 증가시킵니다
-2. 이진화(Binaryzation)을 통해서 이미지를 흑과 백 두가지로 나눕니다. 이미지처리를 단순화하여 속도를 내기 위함입니다.
+2. 이진화(Binarization)을 통해서 이미지를 흑과 백 두가지로 나눕니다. 이미지처리를 단순화하여 속도를 내기 위함입니다.
 3. 노이즈 제거를 통해 이진화 과정에서 생기는 노이즈들을 제거합니다. 
 4. 최종적으로 윤곽선을 추출하여 결함의 경계를 식별합니다.
 
