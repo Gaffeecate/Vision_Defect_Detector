@@ -158,15 +158,131 @@ C:.
 9. 이제 Servo.ino 파일을 누르고 우측 상단의 Arduino Verfy -> Arduino Upload를 눌러줍니다.
 10. vscode 터미널에 arduino done 이라는 메세지가 나오게 되면 코드가 아두이노 보드에 정상적으로 업로드 된것입니다. 
 
+```Tree
+C:.
+│   .gitignore
+│   Servo.ino
+│
+└───.vscode
+        arduino.json
+        c_cpp_properties.json
+```
 
-
-
-
-
+VS Code 상에서 위와같은 트리구조를 갖게 됩니다. 
 
 
 ## 핵심로직
 
+### 카메라 연결
+
+```C++
+CameraHandle CreateCamera(const string& cameraname, const string& ip_address)
+{
+    MV_CC_DEVICE_INFO_LIST stDeviceList; // 연결된 카메라 장치 정보들을 담는 구조체
+    memset(&stDeviceList, 0, sizeof(MV_CC_DEVICE_INFO_LIST)); // memset 함수를 사용하여 stDeviceList 구조체으 모든 바이트를 0으로 초기화
+
+    // GigE 카메라 열거
+    if (MV_CC_EnumDevices(MV_GIGE_DEVICE, &stDeviceList) != MV_OK) // 연결된 카메라를 전부 불러와라
+        return nullptr;
+
+    CameraHandle handle = nullptr;
+    for (unsigned int i = 0; i < stDeviceList.nDeviceNum; i++)
+    {
+        MV_CC_DEVICE_INFO* pDeviceInfo = stDeviceList.pDeviceInfo[i];
+        if (pDeviceInfo->nTLayerType == MV_GIGE_DEVICE) // MV_CC_DEVICE_INFO에 카메라 정보를 담고 GIGE 프로토콜 장치인지 확인
+        {
+            string modelName((char*)pDeviceInfo->SpecialInfo.stGigEInfo.chModelName); // 열거된 카메라의 모델명이
+            if (modelName == cameraname) // 개발자가 입력한 카메라와 일치하냐
+            {
+                // 카메라 핸들 생성
+                if (MV_CC_CreateHandle(&handle, pDeviceInfo) != MV_OK) // 그렇다면 핸들 생성
+                    return nullptr;
+
+                // IP 주소 설정
+                if (!ip_address.empty())
+                {
+                    unsigned int nIP;
+                    if (ParseIPAddress(ip_address, nIP))
+                    {
+                        if (MV_GIGE_ForceIpEx(handle, nIP, 0xFFFFFF00, 0x0101A8C0) != MV_OK)
+                        {
+                            MV_CC_DestroyHandle(handle);
+                            return nullptr;
+                        }
+                    }
+                }
+
+                // 카메라 장치 열기
+                if (MV_CC_OpenDevice(handle, MV_ACCESS_Exclusive, 0) != MV_OK)
+                {
+                    MV_CC_DestroyHandle(handle);
+                    return nullptr;
+                }
+
+                return handle;
+            }
+        }
+    }
+
+    return nullptr;
+}
+
+```
+웹캠의 경우, `VideoCapture cap(0);` 만으로도, 간단하게 카메라를 열 수 있지만 산업용 카메라의 경우 복잡한 과정을 거치면서 연결됩니다.
+카메라의 주소값, 연결된 카메라들의 장치정보들을 불러와야 합니다. 
+
+우선 `MV_CC_EnumDevices` 함수에서 연결 가능한 카메라 정보를 가져오고, 찾는 카메라의 프로토콜을 지정합니다. 이후 발견된 정보들을 구조체에 담습니다.
+이후 `MV_CC_CreateHandle` 함수를 통해 카메라 핸들을 생성합니다. 카메라 핸들은 구조체에서 가져온 카메라정보를 기반으로 카메라와 연결을 수행합니다. 이미지 획득을 위해서 필수적입니다. 
+최종적으로 핸들 즉 채널이 생성되면 카메라를 연결합니다.   
+
+처음엔 복잡한 것처럼 보여도 아래 설명서의 플로우를 따라가다 보면 흐름은 눈에 보이는것 같습니다(여전히 어렵다는 의미입니다..)     주황색으로 표시된 부분은 옵션 절차입니다.
+IP 주소를 정확하게 알고있어 연결하고자 하는 카메라 정보를 가져올수 있는 경우엔 MV_CC_EnumDevices를 삭제 할수도 있습니다.
+
+![image](https://github.com/user-attachments/assets/8b9d4047-8bdd-4168-b9d7-c05ad25dd8fb)
+
+
+### 이미지 처리
+
+```C++
+Mat detectAndMarkDefect(const Mat& frame, int& outDefectCount) {
+    Mat result = frame.clone();
+    cvtColor(result, result, COLOR_GRAY2BGR);
+
+    // 대비 향상
+    Mat enhancedFrame;
+    equalizeHist(frame, enhancedFrame);
+
+    // 적응형 이진화
+    Mat binaryMask;
+    adaptiveThreshold(enhancedFrame, binaryMask, 255, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY_INV, 31, 5);
+
+    // 노이즈 제거
+    Mat kernel = getStructuringElement(MORPH_RECT, Size(3, 3));
+    morphologyEx(binaryMask, binaryMask, MORPH_OPEN, kernel);
+    morphologyEx(binaryMask, binaryMask, MORPH_CLOSE, kernel);
+
+    // 윤곽선 찾기
+    vector<vector<Point>> contours;
+    findContours(binaryMask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
+
+    outDefectCount = 0;
+    double minDefectArea = 800;  // 최소 결함 면적
+}
+  
+```
+1. 대비향상으로 결함에 있는 밝기차이를 증가시킵니다
+2. 이진화(Binarization)을 통해서 이미지를 흑과 백 두가지로 나눕니다. 이미지처리를 단순화하여 속도를 내기 위함입니다.
+3. 노이즈 제거를 통해 이진화 과정에서 생기는 노이즈들을 제거합니다. 
+4. 최종적으로 윤곽선을 추출하여 결함의 경계를 식별합니다.
+
+
 ## 실제 구동장면
 
+![convert](https://github.com/user-attachments/assets/b978d7fa-3d9b-43ee-a5a7-589492136e87)
+
+
 ## 참고자료
+
+1. [Github](https://github.com/parkeh-dev/Control_Hikvision_Camera)
+2. [OpenCV4로 배우는 컴퓨터 비전과 머신러닝](https://thebook.io/006939/0488/)
+3. HIKROBOT API Document (Machine Vision Camera SDK Developer Guide Windows (C) V4.4.0)
