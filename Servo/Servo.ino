@@ -15,7 +15,7 @@ void loop() {
   if (Serial.available() > 0) {
     String command = Serial.readStringUntil('\n');
     command.trim();
-    
+
     if (command == "START") {
       isRunning = true;
       Serial.println("Servo motor started");

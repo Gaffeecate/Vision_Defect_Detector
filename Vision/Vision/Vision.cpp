@@ -18,7 +18,7 @@ typedef void* CameraHandle;
 // 전역 변수
 unsigned char* g_pImageData = nullptr;
 
-// 유틸리티 함수: IP 주소 파싱
+// IP 주소 파싱
 bool ParseIPAddress(const string& ip_address, unsigned int& nIP)
 {
     unsigned int nIP1, nIP2, nIP3, nIP4;
@@ -200,7 +200,7 @@ Mat ProcessFrameWithROI(const Mat& frame, int roiWidth, int roiHeight)
     int centerY = frame.rows / 2;
     Rect roi(centerX - roiWidth / 2, centerY - roiHeight / 2, roiWidth, roiHeight);
 
-    return frame(roi).clone();  // ROI만 적용하고 크기 조정은 하지 않음
+    return frame(roi).clone(); 
 }
 
 
@@ -226,7 +226,7 @@ Mat detectAndMarkDefect(const Mat& frame, int& outDefectCount) {
     findContours(binaryMask, contours, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 
     outDefectCount = 0;
-    double minDefectArea = 800;  // 최소 결함 면적 (필요에 따라 조정)
+    double minDefectArea = 800;  // 최소 결함 면적
 
     for (const auto& contour : contours) {
         double area = contourArea(contour);
@@ -261,7 +261,7 @@ Mat detectAndMarkDefect(const Mat& frame, int& outDefectCount) {
 
 int main()
 {
-    // 이미지 데이터 버퍼 할당
+    // 이미지 데이터 버퍼 할당, 이미지 처리할때 메모리 할당해놓는거다
     g_pImageData = new unsigned char[MAX_IMAGE_DATA_SIZE];
     if (g_pImageData == nullptr)
     {
