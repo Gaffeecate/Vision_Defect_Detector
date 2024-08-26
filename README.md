@@ -243,6 +243,38 @@ IP 주소를 정확하게 알고있어 연결하고자 하는 카메라 정보�
 
 ### 이미지 처리
 
+우선 이미지를 처리하기 전에 비전에 찍힌 프레임을 OpenCV의 객체에 담아야 합니다.
+
+```C++
+// 이미지 획득 함수
+Mat GetFrame(CameraHandle handle)
+{
+    MV_FRAME_OUT_INFO_EX stImageInfo = { 0 }; // 이미지 프레임 정보가 들어가는 구조체 초기화
+    memset(&stImageInfo, 0, sizeof(MV_FRAME_OUT_INFO_EX)); // 구조체 메모리를 0으로 초기화
+
+    int nRet = MV_CC_GetOneFrameTimeout(handle, g_pImageData, MAX_IMAGE_DATA_SIZE, &stImageInfo, 1000); // 프레임을 가져오는데 최대 1000ms을 기다리고
+    if (nRet == MV_OK) // 가져온다면
+    {
+        Mat frame(stImageInfo.nHeight, stImageInfo.nWidth, CV_8UC1, g_pImageData); // 가져온 데이터로  OpenCV Mat 객체 생성한다(단일채널, 8비트)
+        return frame.clone(); // 프레임을 반환하고(원본 데이터를 보존하기 위해 클론해서 반환)
+    }
+    else // 프레임을 가져오지 못할 경우
+    {
+        printf("Failed to get frame, error code: [0x%x]\n", nRet);
+        if (nRet == 0x8000000A)
+        {
+            printf("Timeout error occurred. Check camera connection and settings.\n");
+        }
+    }
+    return Mat(); // 못가져온다면 에러메세지 출려과 함께 빈 Mat 객체를 반환할 것
+}
+```
+위 코드 블록에선 보이지 않지만, 메인함수에서 ``SetFramerate(handle, 5.9f)``로 보유한 카메라가 전달할 수 있는 최대한의 프레임을 확보하게 했습니다. 초당 5.9FPS 입니다.   
+GetFrame 함수는 하드웨어에서 가져온 프레임 이미지들을 메모리에 담아주는 역할을 하게 됩니다.    
+메인루프에서 반복적으로 프레임을 가져오고, 객체에 담아줍니다. 이때 내부에선 프레임을 구조체에 담아주고, 원본 이미지를 보존하면서 가공하기 위해
+.clone을 통해 원본과는 별도의 메모리에 담아 이미지 처리 함수에 전달하게 됩니다.
+
+
 ```C++
 Mat detectAndMarkDefect(const Mat& frame, int& outDefectCount) {
     Mat result = frame.clone();
