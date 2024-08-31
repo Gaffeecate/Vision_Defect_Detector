@@ -133,15 +133,6 @@ C++ -> 일반 -> 추가 포함 디렉터리: `$(OPENCV_DIR)\include;C:\Program F
 VS Code를 사용하였으므로 아두이노 IDE 만을 사용한 과정보다 더 복잡합니다. VS Code를 사용한 의도는 실무와 조금이라도 더 비슷한 환경을 구성하려는 목적이었습니다만
 너무 복잡하고 크게 필요하지 않았던 과정이므로 코드를 클론을 하시고 그냥 아두이노 IDE를 바로 사용하는 것을 권장합니다.
 
-```Tree
-C:.
-│   .gitignore
-│   Servo.ino
-│
-└───.vscode
-        arduino.json
-        c_cpp_properties.json
-```
 
 #### VS code 설정법
 
