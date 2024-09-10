@@ -10,56 +10,44 @@
 using namespace std;
 using namespace cv;
 
-#define MAX_IMAGE_DATA_SIZE (5472 * 3648)
+const long MAX_IMAGE_DATA_SIZE = 5472 * 3648; // 픽셀값 정의
 
 // 카메라 핸들 타입 정의
 typedef void* CameraHandle;
 
 // 전역 변수, 배열의 시작 주소를 알리는 포인터. 여기에 각 픽셀값이 하나씩 할당되게 됨
 // unsigned char는 0~255의 값을 저장할 수 있는 타입으로 각 픽셀의 밝기값을 저장하는데 활용됨
-// unsigned는 C++에서 부호가 없다는 뜻. 
 unsigned char* g_pImageData = nullptr;
 
-// IP 주소 파싱
-bool ParseIPAddress(const string& ip_address, unsigned int& nIP)
-{
-    unsigned int nIP1, nIP2, nIP3, nIP4;
-    if (sscanf_s(ip_address.c_str(), "%u.%u.%u.%u", &nIP1, &nIP2, &nIP3, &nIP4) == 4)
-    {
-        nIP = (nIP1 << 24) | (nIP2 << 16) | (nIP3 << 8) | nIP4;
-        return true;
-    }
-    return false;
-}
 
 // 카메라 생성 및 초기화
 CameraHandle CreateCamera()
 {
-    MV_CC_DEVICE_INFO_LIST stDeviceList;
-    memset(&stDeviceList, 0, sizeof(MV_CC_DEVICE_INFO_LIST));
+    MV_CC_DEVICE_INFO_LIST stDeviceList; // 열거된 장치들을 담는 구조체
+    memset(&stDeviceList, 0, sizeof(MV_CC_DEVICE_INFO_LIST)); // 구조체 크기를 0으로 초기화하고
 
-    if (MV_CC_EnumDevices(MV_GIGE_DEVICE, &stDeviceList) != MV_OK)
+    if (MV_CC_EnumDevices(MV_GIGE_DEVICE, &stDeviceList) != MV_OK) // GigE 프로토콜을 가진 카메라를 열거한다.
     {
         printf("Enum Devices fail!\n");
         return nullptr;
     }
 
-    if (stDeviceList.nDeviceNum == 0)
+    if (stDeviceList.nDeviceNum == 0) // 없을 경우. EnumDevices에서는 실제로 연결된 장치가 없어도 실행될수 있다. 즉 구조체의 크기가 0이 될수 있음. 그걸 확인해야함
     {
         printf("No camera found!\n");
-        return nullptr;
+        return nullptr; // fail
     }
 
     CameraHandle handle = nullptr;
-    MV_CC_DEVICE_INFO* pDeviceInfo = stDeviceList.pDeviceInfo[0];
+    MV_CC_DEVICE_INFO* pDeviceInfo = stDeviceList.pDeviceInfo[0]; // 핸들생성하기 위해 처음거만 가져온다. 
 
     if (MV_CC_CreateHandle(&handle, pDeviceInfo) != MV_OK)
     {
         printf("Create Handle fail!\n");
-        return nullptr;
+        return nullptr; // 핸들생성하고
     }
 
-    if (MV_CC_OpenDevice(handle, MV_ACCESS_Exclusive, 0) != MV_OK)
+    if (MV_CC_OpenDevice(handle, MV_ACCESS_Exclusive, 0) != MV_OK) // 핸들이 생성되었으면 디바이스 오픈
     {
         printf("Open Device fail!\n");
         MV_CC_DestroyHandle(handle);
@@ -69,6 +57,7 @@ CameraHandle CreateCamera()
     printf("Camera opened successfully\n");
     return handle;
 }
+
 
 // 카메라 설정 함수들
 int SetExposureAuto(CameraHandle handle, bool isauto)
@@ -86,12 +75,12 @@ int SetFramerate(CameraHandle handle, float framerate)
     return MV_CC_SetFloatValue(handle, "AcquisitionFrameRate", framerate);
 }
 
-int StartGrabbing(CameraHandle handle)
+int StartGrabbing(CameraHandle handle) // 카메라가 이미지를 잡기 시작함. 이 부분 이후 프레임을 가져올수 있다.
 {
     return MV_CC_StartGrabbing(handle);
 }
 
-int StopGrabbing(CameraHandle handle)
+int StopGrabbing(CameraHandle handle) // 카메라 촬영 중지
 {
     return MV_CC_StopGrabbing(handle);
 }
@@ -100,8 +89,8 @@ void CloseCamera(CameraHandle handle)
 {
     if (handle != nullptr)
     {
-        MV_CC_CloseDevice(handle);
-        MV_CC_DestroyHandle(handle);
+        MV_CC_CloseDevice(handle); // 카메라 연결해제
+        MV_CC_DestroyHandle(handle); // 카메라 핸들 제거 및 리소스 해제
     }
 }
 
@@ -109,19 +98,19 @@ void FinalizeCamera() {
     MV_CC_Finalize();
 }
 
-// 이미지 획득 함수
-Mat GetFrame(CameraHandle handle)
-{
-    MV_FRAME_OUT_INFO_EX stImageInfo = { 0 };
-    memset(&stImageInfo, 0, sizeof(MV_FRAME_OUT_INFO_EX));
 
-    int nRet = MV_CC_GetOneFrameTimeout(handle, g_pImageData, MAX_IMAGE_DATA_SIZE, &stImageInfo, 1000);
-    if (nRet == MV_OK)
+Mat GetFrame(CameraHandle handle) // 이미지 획득 함수
+{
+    MV_FRAME_OUT_INFO_EX stImageInfo = { 0 }; // 이미지 프레임 정보가 들어가는 구조체 초기화
+    memset(&stImageInfo, 0, sizeof(MV_FRAME_OUT_INFO_EX)); // 구조체 메모리를 0으로 초기화
+
+    int nRet = MV_CC_GetOneFrameTimeout(handle, g_pImageData, MAX_IMAGE_DATA_SIZE, &stImageInfo, 1000); // 프레임을 가져오는데 최대 1000ms을 기다리고
+    if (nRet == MV_OK) // 가져온다면
     {
-        Mat frame(stImageInfo.nHeight, stImageInfo.nWidth, CV_8UC1, g_pImageData);
-        return frame.clone();
+        Mat frame(stImageInfo.nHeight, stImageInfo.nWidth, CV_8UC1, g_pImageData); // 가져온 데이터로  OpenCV Mat 객체 생성한다(단일채널, 8비트)
+        return frame.clone(); // 프레임을 반환하고(원본 데이터를 보존하기 위해 클론해서 반환)
     }
-    else
+    else // 프레임을 가져오지 못할 경우
     {
         printf("Failed to get frame, error code: [0x%x]\n", nRet);
         if (nRet == 0x8000000A)
@@ -129,12 +118,12 @@ Mat GetFrame(CameraHandle handle)
             printf("Timeout error occurred. Check camera connection and settings.\n");
         }
     }
-    return Mat();
+    return Mat(); // 못가져온다면 에러메세지 출력과 함께 빈 Mat 객체를 반환할 것
 }
 
 
 // ROI 설정 및 확대 함수
-Mat ProcessFrameWithROI(const Mat& frame, int roiWidth, int roiHeight)
+Mat ProcessFrameWithROI(const Mat& frame, int roiWidth, int roiHeight) // 프레임ㅇ
 {
     int centerX = frame.cols * 7 / 20;
     int centerY = frame.rows / 2;
@@ -210,7 +199,7 @@ Mat detectAndMarkDefect(const Mat& frame, int& outDefectCount) { // ROI가 적�
 
 int main()
 {
-    // 이미지 데이터 버퍼 할당, 이미지 처리할때 메모리 할당해놓는거다
+    // 1. 이미지 데이터 버퍼 할당, 이미지 처리할때 메모리 할당해놓는거다
     g_pImageData = new unsigned char[MAX_IMAGE_DATA_SIZE];
     if (g_pImageData == nullptr)
     {
@@ -218,7 +207,7 @@ int main()
         return -1;
     }
 
-    // 카메라 생성 및 초기화
+    // 2. 카메라 생성 및 초기화
     CameraHandle handle = CreateCamera();
     if (handle == nullptr)
     {
@@ -228,7 +217,7 @@ int main()
     }
 
 
-    // 카메라 설정
+    // 3. 카메라 파라미터 설정
     if (SetExposureAuto(handle, false) != MV_OK ||
         SetExposure(handle, 30000.0f) != MV_OK || 
         SetFramerate(handle, 5.9f) != MV_OK || 
