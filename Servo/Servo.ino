@@ -1,13 +1,13 @@
 #include <Servo.h>
 
 Servo myservo;
-int servoPin = 9; // 서보 모터 연결 핀
+int servoPin = 9; // 서보 모터 연결 핀 PWM 핀에 꽃힌 번호
 int angle = 0; // 현재 각도
 bool isRunning = false; // 동작 여부를 나타내는 플래그
 
 void setup() {
   myservo.attach(servoPin);
-  Serial.begin(9600);
+  Serial.begin(9600); // BaudRate = 9600
   myservo.write(0); // 초기 위치를 0도로 설정
 }
 
@@ -15,7 +15,7 @@ void loop() {
   if (Serial.available() > 0) {
     String command = Serial.readStringUntil('\n');
     command.trim();
-    
+
     if (command == "START") {
       isRunning = true;
       Serial.println("Servo motor started");
