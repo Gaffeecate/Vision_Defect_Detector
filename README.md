@@ -352,6 +352,79 @@ defect을 잘 잡지 못하는 문제점이 있었기 때문에 적응형 이진
 최종적으로 윤곽선을 추출하여 결함의 경계를 식별합니다. 2차원 백터로 Point(x, y 좌표)를 저장하고 윤곽선을 근사화하여 저장합니다.
 
 
+### 서보제어
+```C++
+// ArduinoCommunicator 생성자 호출
+ArduinoCommunicator::ArduinoCommunicator(const std::wstring& portName) {
+    // 시리얼 포트 개방 createFileW: 윈도우 함수, 시리얼 포트를 열기위해서 포트이름외 파라미터들을 매개변수로 넘겨주면 hSerial 핸들을 받아 포트와 통신이 가능하다.
+    hSerial = CreateFileW(portName.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hSerial == INVALID_HANDLE_VALUE) {
+        throw std::runtime_error("Error opening serial port");
+    }
+
+    // 시리얼 포트 상태 가져옴
+    // dcbSerialParams 구조체를 초기화하고
+    dcbSerialParams = { 0 };
+    dcbSerialParams.DCBlength = sizeof(dcbSerialParams); // Windows API는 구조체의 크기를 알아야 함.  
+    if (!GetCommState(hSerial, &dcbSerialParams)) { // 시리얼 포트의 현재상태를 호출하고, dcbSerialParams 구조체에 저장한다. 
+        CloseHandle(hSerial);
+        throw std::runtime_error("Error getting serial port state");
+    }
+
+    // 설정을 시리얼 포트에 가져옴
+    // 몇몇 설정들만 가져오는 것, 이 네가지는 시리얼 통신의 기본설정
+    dcbSerialParams.BaudRate = CBR_9600;// 통신속도
+    dcbSerialParams.ByteSize = 8; //한번에 전송하는 데이터비트수
+    dcbSerialParams.StopBits = ONESTOPBIT; // 1개의 스톱비트, 데이터 프레임의 끝을 나타내는 신호
+    dcbSerialParams.Parity = NOPARITY; // 간단한 오류검출을 위한 로직
+
+    if (!SetCommState(hSerial, &dcbSerialParams)) {
+        CloseHandle(hSerial);
+        throw std::runtime_error("Error setting serial port state");
+    }
+
+    // 타임아웃 설정을 초기화함
+    // 타임아웃을 설정해야 안정성과 오류처리가 강화됨
+    timeouts = { 0 }; // 
+    timeouts.ReadIntervalTimeout = 50;
+    timeouts.ReadTotalTimeoutConstant = 50;
+    timeouts.ReadTotalTimeoutMultiplier = 10;
+    timeouts.WriteTotalTimeoutConstant = 50;
+    timeouts.WriteTotalTimeoutMultiplier = 10;
+    // 타임아웃 설정을 시리얼 포트에 적용한다.
+    if (!SetCommTimeouts(hSerial, &timeouts)) {
+        CloseHandle(hSerial);
+        throw std::runtime_error("Error setting timeouts");
+    }
+}
+
+// 소멸자: 시리얼 포트 핸들 폐쇄
+ArduinoCommunicator::~ArduinoCommunicator() {
+    if (hSerial != INVALID_HANDLE_VALUE) {
+        CloseHandle(hSerial);
+    }
+}
+
+// 아두이노에 명령 전송함수
+void ArduinoCommunicator::sendCommand(const std::string& command) {
+    DWORD bytesWritten;
+    if (!WriteFile(hSerial, command.c_str(), command.length(), &bytesWritten, NULL)) {
+        throw std::runtime_error("Failed to send command to Arduino");
+    }
+}
+```
+시리얼 통신을 구현하려면 작업을 Window API를 사용해야합니다. 
+시리얼 통신이란 데이터를 하나의 비트씩 순차적으로 전송하는 통신방식입니다. 시리얼 통신은 간단하고 긴거리에서 안정적으로 통신할 수 있는 방식입니다. 병렬통신도 있는데 요즘엔 시리얼 통신을 주로 사용합니다.
+
+기본과정은
+포트열기: 통신할 시리얼 포트를 개방합니다. 
+통신설정: 속도, 비트, 정지비트, 패리티 비트 등의 통신 설정을 정의합니다.    
+데이터전송: 설정이 완료된 후, 비트단위로 전송되며 각 비트는 일렬로 보내집니다. 오류를 방지하기 위해 정지비트와 패리티 비트가 사용될수있습니다. 
+데이터수신: 수신측에선 데이터를 비트단위로 받아들입니다. 
+포트폐쇄
+
+
+
 ## 실제 구동장면
 
 ![convert](https://github.com/user-attachments/assets/b978d7fa-3d9b-43ee-a5a7-589492136e87)
