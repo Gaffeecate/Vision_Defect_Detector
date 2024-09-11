@@ -200,55 +200,42 @@ VS Code 상에서 위와같은 트리구조를 갖게 됩니다.
 ### 카메라 연결
 
 ```C++
-CameraHandle CreateCamera(const string& cameraname, const string& ip_address)
+// 카메라 생성 및 초기화
+CameraHandle CreateCamera()
 {
-    MV_CC_DEVICE_INFO_LIST stDeviceList; // 연결된 카메라 장치 정보들을 담는 구조체
-    memset(&stDeviceList, 0, sizeof(MV_CC_DEVICE_INFO_LIST)); // memset 함수를 사용하여 stDeviceList 구조체으 모든 바이트를 0으로 초기화
+    MV_CC_DEVICE_INFO_LIST stDeviceList; // 열거된 장치들을 담는 구조체
+    memset(&stDeviceList, 0, sizeof(MV_CC_DEVICE_INFO_LIST)); // 구조체 크기를 0으로 초기화하고
 
-    // GigE 카메라 열거
-    if (MV_CC_EnumDevices(MV_GIGE_DEVICE, &stDeviceList) != MV_OK) // 연결된 카메라를 전부 불러와라
-        return nullptr;
-
-    CameraHandle handle = nullptr;
-    for (unsigned int i = 0; i < stDeviceList.nDeviceNum; i++)
+    if (MV_CC_EnumDevices(MV_GIGE_DEVICE, &stDeviceList) != MV_OK) // GigE 프로토콜을 가진 카메라를 열거한다.
     {
-        MV_CC_DEVICE_INFO* pDeviceInfo = stDeviceList.pDeviceInfo[i];
-        if (pDeviceInfo->nTLayerType == MV_GIGE_DEVICE) // MV_CC_DEVICE_INFO에 카메라 정보를 담고 GIGE 프로토콜 장치인지 확인
-        {
-            string modelName((char*)pDeviceInfo->SpecialInfo.stGigEInfo.chModelName); // 열거된 카메라의 모델명이
-            if (modelName == cameraname) // 개발자가 입력한 카메라와 일치하냐
-            {
-                // 카메라 핸들 생성
-                if (MV_CC_CreateHandle(&handle, pDeviceInfo) != MV_OK) // 그렇다면 핸들 생성
-                    return nullptr;
-
-                // IP 주소 설정
-                if (!ip_address.empty())
-                {
-                    unsigned int nIP;
-                    if (ParseIPAddress(ip_address, nIP))
-                    {
-                        if (MV_GIGE_ForceIpEx(handle, nIP, 0xFFFFFF00, 0x0101A8C0) != MV_OK)
-                        {
-                            MV_CC_DestroyHandle(handle);
-                            return nullptr;
-                        }
-                    }
-                }
-
-                // 카메라 장치 열기
-                if (MV_CC_OpenDevice(handle, MV_ACCESS_Exclusive, 0) != MV_OK)
-                {
-                    MV_CC_DestroyHandle(handle);
-                    return nullptr;
-                }
-
-                return handle;
-            }
-        }
+        printf("Enum Devices fail!\n");
+        return nullptr;
     }
 
-    return nullptr;
+    if (stDeviceList.nDeviceNum == 0) // 없을 경우. EnumDevices에서는 실제로 연결된 장치가 없어도 실행될수 있다. 즉 구조체의 크기가 0이 될수 있음. 그걸 확인
+    {
+        printf("No camera found!\n");
+        return nullptr; // fail
+    }
+
+    CameraHandle handle = nullptr;
+    MV_CC_DEVICE_INFO* pDeviceInfo = stDeviceList.pDeviceInfo[0]; // 핸들생성하기 위해 처음거만 가져온다. 
+
+    if (MV_CC_CreateHandle(&handle, pDeviceInfo) != MV_OK)
+    {
+        printf("Create Handle fail!\n");
+        return nullptr; // 핸들생성하고
+    }
+
+    if (MV_CC_OpenDevice(handle, MV_ACCESS_Exclusive, 0) != MV_OK) // 핸들이 생성되었으면 디바이스 오픈
+    {
+        printf("Open Device fail!\n");
+        MV_CC_DestroyHandle(handle);
+        return nullptr;
+    }
+
+    printf("Camera opened successfully\n");
+    return handle;
 }
 
 ```
@@ -259,8 +246,7 @@ CameraHandle CreateCamera(const string& cameraname, const string& ip_address)
 이후 `MV_CC_CreateHandle` 함수를 통해 카메라 핸들을 생성합니다. 카메라 핸들은 구조체에서 가져온 카메라정보를 기반으로 카메라와 연결을 수행합니다. 이미지 획득을 위해서 필수적입니다. 
 최종적으로 핸들 즉 채널이 생성되면 카메라를 연결합니다.
 
-처음엔 복잡한 것처럼 보여도 아래 설명서의 플로우를 따라가다 보면 흐름은 눈에 보이는것 같습니다(여전히 어렵다는 의미입니다..)     주황색으로 표시된 부분은 옵션 절차입니다.
-IP 주소를 정확하게 알고있어 연결하고자 하는 카메라 정보를 가져올수 있는 경우엔 MV_CC_EnumDevices를 삭제 할수도 있습니다.
+처음엔 복잡한 것처럼 보여도 아래 설명서의 플로우를 따라가다 보면 흐름은 눈에 보이는것 같습니다.
 
 ![image](https://github.com/user-attachments/assets/8b9d4047-8bdd-4168-b9d7-c05ad25dd8fb)
 
